@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Behind the Curtain of "Free" Apps</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='27' fill='none' stroke='%238f6526' stroke-width='4' stroke-linecap='round' stroke-dasharray='170' stroke-dashoffset='42'/%3E%3C/svg%3E">
+
+
+    <style>
+        :root {
+            --bg: #f7f2e9;
+            --bg-card: #fffdf9;
+            --gold: #b3813a;
+            --gold-bright: #8f6526;
+            --bronze: #6e5228;
+            --ink: #2c2721;
+            --ink-muted: #615a4f;
+            --ink-faint: #8f8676;
+            --line: rgba(44, 39, 33, 0.14);
+            --grid: rgba(44, 39, 33, 0.09);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--ink);
+            overflow: hidden;
+            font-family: 'Amiri', serif;
+        }
+        .num {
+            font-family: 'Amiri', serif;
+            font-weight: 700;
+        }
+
+        #deck {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #morph-accent {
+            position: absolute;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 40% 35%, rgba(201, 162, 77, 0.20), rgba(201, 162, 77, 0.02) 65%);
+            filter: blur(20px);
+            transition: transform 1.1s cubic-bezier(.4, 0, .2, 1), width 1.1s cubic-bezier(.4, 0, .2, 1), height 1.1s cubic-bezier(.4, 0, .2, 1), border-radius 1.1s ease;
+            animation: breathe 10s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%,
+            100% {
+                border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+            }
+            50% {
+                border-radius: 60% 40% 44% 56% / 50% 60% 40% 50%;
+            }
+        }
+
+        .wordmark {
+            position: absolute;
+            top: 28px;
+            left: 34px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-mark {
+            width: 28px;
+            height: 28px;
+        }
+        .logo-mark svg {
+            width: 100%;
+            height: 100%;
+        }
+        .wordmark .name {
+            font-family: 'Amiri', serif;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: .04em;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6vh 6vw;
+            opacity: 0;
+            transform: translateY(34px) scale(1.035);
+            transition: opacity .95s cubic-bezier(.4, 0, .2, 1), transform .95s cubic-bezier(.4, 0, .2, 1);
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .slide[data-state="active"] {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--gold-bright);
+            margin: 0 auto 16px;
+            width: fit-content;
+            background: rgba(179, 129, 58, 0.08);
+            border: 1px solid var(--line);
+            border-radius: 50px;
+            padding: 6px 20px;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+        }
+
+        h1 {
+            font-weight: 700;
+            font-size: clamp(24px, 3.6vw, 42px);
+            line-height: 1.2;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h2.sub {
+            font-weight: 700;
+            font-size: clamp(16px, 1.5vw, 22px);
+            color: var(--gold-bright);
+            margin: 12px auto 0;
+        }
+
+        .lede {
+            font-size: clamp(14px, 1.2vw, 17px);
+            color: var(--ink-muted);
+            width: 100%;
+            max-width: 720px;
+            line-height: 1.8;
+            margin: 16px auto 0;
+            font-weight: 400;
+        }
+
+        .credit {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--ink-faint);
+            letter-spacing: .04em;
+        }
+
+        /* ----- enhanced list (used for Direct & Indirect Revenue) ----- */
+        .list-enhanced {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px auto 0;
+            max-width: 620px;
+            width: 100%;
+        }
+        .list-enhanced li {
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 40px;
+            padding: 12px 22px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: clamp(14px, 1.1vw, 17px);
+            font-weight: 400;
+            color: var(--ink);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .list-enhanced li:hover {
+            transform: translateY(-2px) scale(1.01);
+            border-color: var(--gold);
+            box-shadow: 0 8px 20px rgba(179, 129, 58, 0.08);
+        }
+        .list-enhanced li .icon-circle {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(179, 129, 58, 0.10), rgba(179, 129, 58, 0.01));
+            border: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--gold-bright);
+            font-weight: 700;
+        }
+
+        /* ----- clean list (NO background, NO cards) for Data Collection & Evidence ----- */
+        .clean-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px auto 0;
+            max-width: 760px;
+            width: 100%;
+            text-align: left;
+            font-size: clamp(14px, 1.1vw, 17px);
+            line-height: 1.6;
+        }
+        .clean-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            color: var(--ink);
+        }
+        .clean-list li:last-child {
+            border-bottom: none;
+        }
+        .clean-list .dot-bullet {
+            width: 8px;
+            height: 8px;
+            min-width: 8px;
+            border-radius: 50%;
+            background: var(--gold-bright);
+            display: inline-block;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+        .clean-list .sub-text {
+            font-size: clamp(13px, 1.0vw, 16px);
+            color: var(--ink-muted);
+            display: block;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        .clean-list .src-tag {
+            font-size: 13px;
+            color: var(--gold-bright);
+            font-style: italic;
+            margin-top: 4px;
+            display: block;
+            font-weight: 400;
+        }
+        .clean-list .src-tag a {
+            color: var(--gold-bright);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--gold-bright);
+            transition: all 0.2s ease;
+        }
+        .clean-list .src-tag a:hover {
+            color: var(--bronze);
+            border-bottom: 1px solid var(--bronze);
+        }
+
+        /* ----- model cards with dual arrows ----- */
+        .model-dual {
+            display: flex;
+            gap: 30px;
+            margin: 12px auto 0;
+            max-width: 780px;
+            width: 100%;
+            justify-content: center;
+        }
+        .model-dual .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        .model-dual .arrow-down {
+            font-size: 28px;
+            color: var(--gold-bright);
+            animation: pulse-down 2s ease-in-out infinite;
+            line-height: 1;
+        }
+        @keyframes pulse-down {
+            0%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(6px);
+                opacity: 1;
+            }
+        }
+        .model-dual .model-card {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 28px 18px 24px;
+            text-align: center;
+            transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+        }
+        .model-dual .model-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--gold);
+            box-shadow: 0 16px 32px rgba(179, 129, 58, 0.10);
+        }
+        .model-dual .model-card .icon-badge {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, rgba(179, 129, 58, 0.15), rgba(179, 129, 58, 0.02));
+            border: 1px solid var(--line);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .model-dual .model-card .icon-badge svg {
+            width: 30px;
+            height: 30px;
+            stroke: var(--gold-bright);
+            fill: none;
+            stroke-width: 1.6;
+        }
+        .model-dual .model-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 8px 0 4px;
+        }
+        .model-dual .model-card p {
+            color: var(--ink-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .model-dual .model-card .idx {
+            display: inline-block;
+            background: var(--gold-bright);
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            line-height: 24px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        /* ----- vertical flow ----- */
+        .flow-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            margin: 20px auto 0;
+            max-width: 420px;
+            width: 100%;
+        }
+        .flow-vertical .step {
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 40px;
+            padding: 10px 24px;
+            font-weight: 700;
+            font-size: clamp(13px, 1.1vw, 16px);
+            color: var(--ink);
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .flow-vertical .step:hover {
+            transform: scale(1.02);
+            border-color: var(--gold);
+        }
+        .flow-vertical .arrow {
+            color: var(--gold-bright);
+            font-size: 20px;
+            line-height: 1;
+            margin: 0;
+        }
+        .flow-vertical .step-final {
+            background: linear-gradient(135deg, var(--gold-bright), var(--bronze));
+            color: #fffdf9;
+            border-color: var(--bronze);
+        }
+
+        /* ----- records / chips ----- */
+        .records {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            max-width: 600px;
+            margin: 20px auto 0;
+        }
+        .chip {
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 60px;
+            padding: 8px 18px;
+            font-size: 14px;
+            color: var(--ink-muted);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .chip:hover {
+            transform: translateY(-2px);
+            border-color: var(--gold);
+        }
+        .down-arrow {
+            color: var(--gold-bright);
+            font-size: 24px;
+            margin: 12px 0;
+        }
+        .conclusion-box {
+            background: linear-gradient(135deg, var(--gold-bright), var(--bronze));
+            color: #fffdf9;
+            border-radius: 60px;
+            padding: 12px 28px;
+            font-weight: 700;
+            font-size: clamp(14px, 1.1vw, 17px);
+        }
+
+        /* ----- stats charts ----- */
+        .stats-chart {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            margin: 20px auto 0;
+            width: 100%;
+            max-width: 840px;
+        }
+        .chart-item {
+            flex: 1 1 260px;
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            padding: 22px 18px 26px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .chart-item:hover {
+            transform: translateY(-6px);
+            border-color: var(--gold);
+        }
+        .chart-item .brand {
+            font-weight: 700;
+            font-size: 17px;
+            margin-bottom: 12px;
+            color: var(--ink);
+        }
+        .chart-item .bar-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .chart-item .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between;
+        }
+        .chart-item .bar-label {
+            font-size: 13px;
+            color: var(--ink-muted);
+            min-width: 50px;
+            text-align: left;
+        }
+        .chart-item .bar-track {
+            flex: 1;
+            height: 10px;
+            background: var(--grid);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .chart-item .bar-fill {
+            height: 100%;
+            border-radius: 20px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+            width: 0%;
+            transition: width 1.8s cubic-bezier(.4, 0, .2, 1);
+        }
+        .chart-item .bar-value {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--gold-bright);
+            min-width: 36px;
+            text-align: right;
+        }
+        .chart-item .stat-num {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gold-bright);
+            margin: 8px 0 2px;
+        }
+        .chart-item .stat-lbl {
+            font-size: 12px;
+            color: var(--ink-muted);
+        }
+        .key-msg {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--ink-muted);
+            font-style: italic;
+            background: var(--bg-card);
+            border: 1px solid var(--line);
+            border-radius: 60px;
+            padding: 10px 24px;
+            display: inline-block;
+        }
+
+        /* donut */
+        .donut-container {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 6px 0;
+        }
+        .donut-svg {
+            width: 80px;
+            height: 80px;
+            transform: rotate(-90deg);
+        }
+        .donut-svg circle {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+        .donut-svg .bg-circle {
+            stroke: #e6ddd0;
+        }
+        .donut-svg .fg-circle {
+            stroke: url(#goldGrad);
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            transition: stroke-dashoffset 1.8s cubic-bezier(.4, 0, .2, 1);
+        }
+        .donut-label {
+            font-size: 13px;
+            color: var(--ink-muted);
+            text-align: left;
+        }
+        .donut-label strong {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        /* nav */
+        .nav-ui {
+            position: absolute;
+            bottom: 24px;
+            left: 34px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 60;
+        }
+        .dots {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            max-width: 300px;
+            justify-content: center;
+        }
+        .dots .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--line);
+            cursor: pointer;
+            transition: .3s;
+        }
+        .dots .dot.active {
+            background: var(--gold-bright);
+            width: 18px;
+            border-radius: 4px;
+        }
+        .navbtn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: rgba(255, 253, 249, 0.85);
+            color: var(--ink);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all .3s ease;
+        }
+        .navbtn:hover {
+            border-color: var(--gold);
+            color: var(--gold-bright);
+            background: rgba(201, 162, 77, 0.12);
+            transform: scale(1.06);
+        }
+        .slidecount {
+            position: absolute;
+            bottom: 30px;
+            right: 34px;
+            z-index: 60;
+            font-family: 'Amiri', serif;
+            color: var(--ink-muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 700px) {
+            .model-dual {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .model-dual .arrow-down {
+                transform: rotate(90deg);
+                animation: pulse-down-mobile 2s ease-in-out infinite;
+            }
+            @keyframes pulse-down-mobile {
+                0%,
+                100% {
+                    transform: rotate(90deg) translateX(0);
+                    opacity: 0.6;
+                }
+                50% {
+                    transform: rotate(90deg) translateX(6px);
+                    opacity: 1;
+                }
+            }
+            .slide {
+                padding: 4vh 4vw;
+            }
+            .clean-list {
+                font-size: clamp(14px, 1.1vw, 17px);
+            }
+            .clean-list .dot-bullet {
+                margin-top: 8px;
+                width: 7px;
+                height: 7px;
+                min-width: 7px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="deck">
+        <div id="morph-accent"></div>
+
+        <div class="wordmark">
+            <div class="logo-mark">
+                <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(44,39,33,0.15)" stroke-width="2.4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#8f6526" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="26.7"/></svg>
+            </div>
+            <span class="name">THE PRICE OF FREE</span>
+        </div>
+
+        <!-- 0 Cover -->
+        <section class="slide" data-index="0">
+            <span class="eyebrow">Presentation</span>
+            <h1>Behind the Curtain of "Free" Apps</h1>
+            <p class="lede">How Companies Profit When You Pay Nothing</p>
+            <div class="credit" style="font-size:clamp(16px,1.4vw,22px); color:var(--gold-bright); font-weight:700; letter-spacing:.06em; background:rgba(179,129,58,0.08); padding:8px 28px; border-radius:60px; border:1px solid var(--line); bottom:72px;">Presented by Boussag Abdelmoumin</div>
+        </section>
+
+        <!-- 1 The Truth -->
+        <section class="slide" data-index="1">
+            <span class="eyebrow">Introduction</span>
+            <h1>The Truth Behind Free Apps</h1>
+            <ul class="list-enhanced">
+                <li><span class="icon-circle">❓</span> Is "Free" Really Free?</li>
+                <li><span class="icon-circle">👆</span> Every Click Has Value</li>
+                <li><span class="icon-circle">⏱️</span> Every Second Online Matters</li>
+                <li><span class="icon-circle">💸</span> Someone Is Paying...</li>
+                <li><span class="icon-circle">🔍</span> But Who?</li>
+                <li><span class="icon-circle">✨</span> Let's Discover the Truth...</li>
+            </ul>
+        </section>
+
+        <!-- 2 Hidden Business Model -->
+        <section class="slide" data-index="2">
+            <span class="eyebrow">The Model</span>
+            <h1>The Hidden Business Model</h1>
+            <h2 class="sub" style="margin-bottom:6px;">How Do Companies Make Money?</h2>
+            <div class="model-dual">
+                <div class="col">
+                    <div class="arrow-down">⬇</div>
+                    <div class="model-card">
+                        <div class="idx">1</div>
+                        <div class="icon-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h6M9 14h4"/></svg></div>
+                        <h3>Direct Revenue</h3>
+                        <p>Money made straight from the product — ads, deals, and subscriptions.</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="arrow-down">⬇</div>
+                    <div class="model-card">
+                        <div class="idx">2</div>
+                        <div class="icon-badge"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/></svg></div>
+                        <h3>Indirect Revenue</h3>
+                        <p>Value built quietly in the background — through data and behavior.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3 Direct Revenue -->
+        <section class="slide" data-index="3">
+            <span class="eyebrow">Direct Revenue</span>
+            <h1>Direct Revenue Methods</h1>
+            <ul class="list-enhanced">
+                <li><span class="icon-circle">📢</span> Targeted Advertising — Ads matched to each user based on their data.</li>
+                <li><span class="icon-circle">🤝</span> Business Partnerships — Deals with other companies that share user reach.</li>
+                <li><span class="icon-circle">⭐</span> Freemium &amp; Subs — Free basic access, premium features sold on top.</li>
+            </ul>
+        </section>
+
+        <!-- 4 Indirect Revenue -->
+        <section class="slide" data-index="4">
+            <span class="eyebrow">Data as Currency</span>
+            <h1>Indirect Revenue Methods</h1>
+            <ul class="list-enhanced">
+                <li><span class="icon-circle">📊</span> User Data Collection</li>
+                <li><span class="icon-circle">🕵️</span> Behavior Tracking</li>
+                <li><span class="icon-circle">🤖</span> AI &amp; Data Analysis</li>
+                <li><span class="icon-circle">👤</span> User Profiling</li>
+                <li><span class="icon-circle">💰</span> Data Monetization</li>
+            </ul>
+        </section>
+
+        <!-- 5 Collect Data -->
+        <section class="slide" data-index="5">
+            <span class="eyebrow">Step 1</span>
+            <h1>How Companies Collect Data</h1>
+            <div class="flow-vertical">
+                <div class="step">📱 Download a Free App</div>
+                <div class="arrow">↓</div>
+                <div class="step">📄 Accept Privacy Policy</div>
+                <div class="arrow">↓</div>
+                <div class="step">🍪 Accept Cookies</div>
+                <div class="arrow">↓</div>
+                <div class="step step-final">🔓 Grant App Permissions</div>
+            </div>
+        </section>
+
+        <!-- 6 Data Collection -->
+        <section class="slide" data-index="6">
+            <span class="eyebrow">In Practice</span>
+            <h1>Data Collection</h1>
+            <ul class="clean-list">
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span><strong>IP Address</strong> — identifies your network connection</span>
+                </li>
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span><strong>Cookies</strong> — remember your preferences &amp; session data</span>
+                </li>
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span><strong>Session ID</strong> — keeps you logged in across the app</span>
+                </li>
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span><strong>Device Info</strong> — model, OS, screen size for analytics</span>
+                </li>
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span><strong>Location Data</strong> — approximate or precise location for targeted content</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 7 Behavior Analysis -->
+        <section class="slide" data-index="7">
+            <span class="eyebrow">Tracking</span>
+            <h1>Behavior Analysis</h1>
+            <h2 class="sub">The App Records</h2>
+            <div class="records">
+                <span class="chip">▶️ Videos</span>
+                <span class="chip">🖼️ Images</span>
+                <span class="chip">🔍 Searches</span>
+                <span class="chip">❤️ Likes</span>
+                <span class="chip">💬 Comments</span>
+                <span class="chip">↗️ Shares</span>
+                <span class="chip">⏳ Time Spent</span>
+            </div>
+            <div class="down-arrow">↓</div>
+            <div class="conclusion-box">🧠 AI &amp; Algorithms Analyze Behavior</div>
+        </section>
+
+        <!-- 8 From Data to Revenue -->
+        <section class="slide" data-index="8">
+            <span class="eyebrow">The Pipeline</span>
+            <h1>From Data to Revenue</h1>
+            <div class="flow-vertical">
+                <div class="step">📦 Collected Data</div>
+                <div class="arrow">↓</div>
+                <div class="step">👤 User Profile</div>
+                <div class="arrow">↓</div>
+                <div class="step">🖥️ Company Servers</div>
+                <div class="arrow">↓</div>
+                <div class="step">📈 Data Analysis</div>
+                <div class="arrow">↓</div>
+                <div class="step">🎯 Targeted Advertising</div>
+                <div class="arrow">↓</div>
+                <div class="step step-final">💵 Company Revenue</div>
+            </div>
+        </section>
+
+        <!-- 9 Evidence — with clickable source link -->
+        <section class="slide" data-index="9">
+            <span class="eyebrow">Evidence</span>
+            <h1>Evidence &amp; Sources</h1>
+            <ul class="clean-list">
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span>
+                        <strong>Official Report — U.S. CRS</strong>
+                        <span class="sub-text">Digital platforms generate most of their revenue through online advertising.</span>
+                        <span class="src-tag">Source: <a href="https://www.congress.gov/crs-product/R46662" target="_blank">congress.gov/crs-product/R46662</a></span>
+                    </span>
+                </li>
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span>
+                        <strong>Targeted Advertising</strong>
+                        <span class="sub-text">Uses user data to reach specific audiences. Different users see different ads based on their profiles.</span>
+                        <span class="src-tag">Source: <a href="https://www.congress.gov/crs-product/R46662" target="_blank">congress.gov/crs-product/R46662</a></span>
+                    </span>
+                </li>
+                <li>
+                    <span class="dot-bullet"></span>
+                    <span>
+                        <strong>Data as Currency</strong>
+                        <span class="sub-text">User data is collected, analyzed, and monetized — often without explicit consent.</span>
+                        <span class="src-tag">Source: FTC &amp; industry reports</span>
+                    </span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 10 Statistics -->
+        <section class="slide" data-index="10">
+            <span class="eyebrow">By the Numbers</span>
+            <h1>Real-World Statistics</h1>
+            <div class="stats-chart" id="statsContainer">
+                <!-- Meta -->
+                <div class="chart-item">
+                    <div class="brand">Meta</div>
+                    <div class="donut-container">
+                        <svg class="donut-svg" viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40" />
+                            <circle class="fg-circle" cx="50" cy="50" r="40" data-percent="98" />
+                            <defs>
+                                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#b3813a" />
+                                    <stop offset="100%" stop-color="#8f6526" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="donut-label">
+                            <div><strong>98%</strong> from ads</div>
+                            <div style="font-size:12px;color:var(--ink-faint);">$132B (2023)</div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-row">
+                            <span class="bar-label">Ads</span>
+                            <div class="bar-track"><div class="bar-fill" data-width="98"></div></div>
+                            <span class="bar-value">98%</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Other</span>
+                            <div class="bar-track"><div class="bar-fill" data-width="2" style="background:var(--ink-faint);"></div></div>
+                            <span class="bar-value">2%</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Google -->
+                <div class="chart-item">
+                    <div class="brand">Google (Alphabet)</div>
+                    <div class="donut-container">
+                        <svg class="donut-svg" viewBox="0 0 100 100">
+                            <circle class="bg-circle" cx="50" cy="50" r="40" />
+                            <circle class="fg-circle" cx="50" cy="50" r="40" data-percent="77" />
+                        </svg>
+                        <div class="donut-label">
+                            <div><strong>77%</strong> from ads</div>
+                            <div style="font-size:12px;color:var(--ink-faint);">$238B (2023)</div>
+                        </div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-row">
+                            <span class="bar-label">Ads</span>
+                            <div class="bar-track"><div class="bar-fill" data-width="77"></div></div>
+                            <span class="bar-value">77%</span>
+                        </div>
+                        <div class="bar-row">
+                            <span class="bar-label">Other</span>
+                            <div class="bar-track"><div class="bar-fill" data-width="23" style="background:var(--ink-faint);"></div></div>
+                            <span class="bar-value">23%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="key-msg">Key Message: Advertising is the primary source of revenue.</p>
+        </section>
+
+        <!-- 11 Privacy Impacts -->
+        <section class="slide" data-index="11">
+            <span class="eyebrow">The Cost</span>
+            <h1>Privacy Impacts</h1>
+            <ul class="list-enhanced">
+                <li><span class="icon-circle">🔒</span> Loss of Personal Privacy</li>
+                <li><span class="icon-circle">👁️</span> Continuous Tracking</li>
+                <li><span class="icon-circle">🧩</span> Behavioral Profiling</li>
+                <li><span class="icon-circle">📢</span> Personalized Advertising</li>
+                <li><span class="icon-circle">⚙️</span> Reduced Control Over Data</li>
+                <li><span class="icon-circle">⚠️</span> Data Security Risks</li>
+            </ul>
+        </section>
+
+        <!-- 12 Protect -->
+        <section class="slide" data-index="12">
+            <span class="eyebrow">Take Action</span>
+            <h1>How to Protect Your Privacy</h1>
+            <ul class="list-enhanced">
+                <li><span class="icon-circle">📖</span> Read the Privacy Policy</li>
+                <li><span class="icon-circle">🔐</span> Review App Permissions</li>
+                <li><span class="icon-circle">🚫</span> Limit Unnecessary Permissions</li>
+                <li><span class="icon-circle">🔑</span> Use Strong Passwords</li>
+                <li><span class="icon-circle">📱</span> Enable Two-Factor Auth (2FA)</li>
+                <li><span class="icon-circle">✅</span> Download from Trusted Sources</li>
+                <li><span class="icon-circle">🍪</span> Review Cookie Settings</li>
+            </ul>
+        </section>
+
+        <!-- 13 Final Message -->
+        <section class="slide" data-index="13">
+            <span class="eyebrow">Reflection</span>
+            <h1>Final Message</h1>
+            <p class="lede">Free apps offer convenience, but they also collect valuable data. Understanding how they work helps us make smarter and safer digital choices.</p>
+        </section>
+
+        <!-- 14 Summary -->
+        <section class="slide" data-index="14">
+            <span class="eyebrow">Recap</span>
+            <h1>Summary</h1>
+            <ul class="list-enhanced">
+                <li><span class="icon-circle">💡</span> Free Doesn't Always Mean Free</li>
+                <li><span class="icon-circle">📊</span> Companies Use Direct &amp; Indirect Models</li>
+                <li><span class="icon-circle">💎</span> User Data Has Economic Value</li>
+                <li><span class="icon-circle">🛡️</span> Privacy Is Everyone's Responsibility</li>
+                <li><span class="icon-circle">🌐</span> Stay Informed. Stay Safe.</li>
+            </ul>
+        </section>
+
+        <!-- 15 Thank You -->
+        <section class="slide" data-index="15">
+            <span class="eyebrow">The End</span>
+            <h1>Thank You</h1>
+            <p class="lede">Questions?</p>
+        </section>
+
+    </div>
+
+    <div class="slidecount"><span id="curNum" class="num">01</span> / <span class="num">16</span></div>
+    <div class="nav-ui">
+        <button class="navbtn" id="prevBtn" aria-label="Previous">‹</button>
+        <div class="dots" id="dots"></div>
+        <button class="navbtn" id="nextBtn" aria-label="Next">›</button>
+    </div>
+
+    <script>
+        const slides = Array.from(document.querySelectorAll('.slide'));
+        const total = slides.length;
+        let current = 0;
+        let statsAnimated = false;
+
+        const accentTargets = [
+            { w: '46vw', h: '46vw', top: '-16%', left: '62%' },
+            { w: '34vw', h: '34vw', top: '58%', left: '4%' },
+            { w: '40vw', h: '40vw', top: '-18%', left: '10%' },
+            { w: '30vw', h: '30vw', top: '60%', left: '70%' },
+            { w: '42vw', h: '42vw', top: '-12%', left: '42%' },
+            { w: '36vw', h: '36vw', top: '52%', left: '58%' },
+            { w: '44vw', h: '44vw', top: '22%', left: '-8%' },
+            { w: '38vw', h: '38vw', top: '-10%', left: '30%' },
+            { w: '40vw', h: '40vw', top: '55%', left: '20%' },
+            { w: '32vw', h: '32vw', top: '-14%', left: '66%' },
+            { w: '44vw', h: '44vw', top: '50%', left: '50%' },
+            { w: '36vw', h: '36vw', top: '-16%', left: '8%' },
+            { w: '40vw', h: '40vw', top: '56%', left: '64%' },
+            { w: '46vw', h: '46vw', top: '-18%', left: '36%' },
+            { w: '34vw', h: '34vw', top: '58%', left: '6%' },
+            { w: '48vw', h: '48vw', top: '-14%', left: '46%' },
+        ];
+        const accent = document.getElementById('morph-accent');
+
+        const dotsWrap = document.getElementById('dots');
+        slides.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'dot' + (i === 0 ? ' active' : '');
+            d.addEventListener('click', () => goTo(i));
+            dotsWrap.appendChild(d);
+        });
+        const dots = Array.from(dotsWrap.children);
+        const curNum = document.getElementById('curNum');
+
+        function applyAccent(i) {
+            const t = accentTargets[i];
+            accent.style.width = t.w;
+            accent.style.height = t.h;
+            accent.style.top = t.top;
+            accent.style.left = t.left;
+        }
+
+        function animateStats() {
+            if (statsAnimated) return;
+            statsAnimated = true;
+
+            document.querySelectorAll('.bar-fill').forEach(el => {
+                const w = parseFloat(el.dataset.width);
+                if (!isNaN(w)) {
+                    setTimeout(() => { el.style.width = w + '%'; }, 200);
+                }
+            });
+
+            document.querySelectorAll('.fg-circle').forEach(el => {
+                const percent = parseFloat(el.dataset.percent);
+                if (!isNaN(percent)) {
+                    const circumference = 2 * Math.PI * 40;
+                    const offset = circumference - (percent / 100) * circumference;
+                    setTimeout(() => { el.style.strokeDashoffset = offset; }, 300);
+                }
+            });
+        }
+
+        function render() {
+            slides.forEach((s, i) => { s.dataset.state = (i === current) ? 'active' : 'idle'; });
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            curNum.textContent = String(current + 1).padStart(2, '0');
+            applyAccent(current);
+
+            if (current === 10) {
+                animateStats();
+            } else {
+                if (statsAnimated) {
+                    statsAnimated = false;
+                    document.querySelectorAll('.bar-fill').forEach(el => { el.style.width = '0%'; });
+                    document.querySelectorAll('.fg-circle').forEach(el => { el.style.strokeDashoffset = '251.2'; });
+                }
+            }
+        }
+
+        function goTo(i) {
+            const newIdx = Math.max(0, Math.min(total - 1, i));
+            if (newIdx !== current) {
+                if (current === 10 && newIdx !== 10) {
+                    statsAnimated = false;
+                    document.querySelectorAll('.bar-fill').forEach(el => { el.style.width = '0%'; });
+                    document.querySelectorAll('.fg-circle').forEach(el => { el.style.strokeDashoffset = '251.2'; });
+                }
+            }
+            current = newIdx;
+            render();
+        }
+
+        document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
+        document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowDown', 'ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault();
+                goTo(current + 1); }
+            if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault();
+                goTo(current - 1); }
+        });
+        let touchStartY = null;
+        window.addEventListener('touchstart', e => touchStartY = e.touches[0].clientY);
+        window.addEventListener('touchend', e => {
+            if (touchStartY === null) return;
+            const dy = touchStartY - e.changedTouches[0].clientY;
+            if (Math.abs(dy) > 40) goTo(current + (dy > 0 ? 1 : -1));
+            touchStartY = null;
+        });
+        let wheelLock = false;
+        window.addEventListener('wheel', e => {
+            if (wheelLock) return;
+            if (Math.abs(e.deltaY) < 20) return;
+            e.preventDefault();
+            wheelLock = true;
+            goTo(current + (e.deltaY > 0 ? 1 : -1));
+            setTimeout(() => wheelLock = false, 800);
+        }, { passive: false });
+
+        render();
+    </script>
+</body>
+</html>
